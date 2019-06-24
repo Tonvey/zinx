@@ -43,7 +43,7 @@ public:
 	void Handle(IZinxMsg &_oInput);
 protected:
     /*信息处理函数，开发者重写该函数实现信息的处理，当有需要一个环节继续处理时，应该创建新的信息对象（堆对象）并返回指针*/
-	virtual IZinxMsg *InternelHandle(IZinxMsg &_oInput) = 0;
+	virtual IZinxMsg *InternalHandle(IZinxMsg &_oInput) = 0;
 
 	/*获取下一个处理环节函数，开发者重写该函数，可以指定当前处理环节结束后下一个环节是什么，通过参数信息对象，可以针对不同情况进行分别处理*/
 	virtual AZinxHandler *GetNextHandler(IZinxMsg &_oNextMsg) = 0;
@@ -117,7 +117,7 @@ public:
 	}
 private:
 	Irole *poNextProcessor = NULL;
-	virtual IZinxMsg *InternelHandle(IZinxMsg &_oInput);
+	virtual IZinxMsg *InternalHandle(IZinxMsg &_oInput);
 	virtual AZinxHandler *GetNextHandler(IZinxMsg &_oNextMsg);
 
 };
@@ -142,7 +142,7 @@ protected:
 	/*获取发送通道函数，开发者应该重写该函数，用来指定当前字节流应该由哪个通道对象发出*/
 	virtual Ichannel *GetMsgSender(BytesMsg &_oBytes) = 0;
 private:
-	virtual IZinxMsg *InternelHandle(IZinxMsg &_oInput);
+	virtual IZinxMsg *InternalHandle(IZinxMsg &_oInput);
 	virtual AZinxHandler *GetNextHandler(IZinxMsg &_oNextMsg);
 };
 
@@ -186,7 +186,7 @@ protected:
 	一般地，开发者应该在该函数返回一个协议对象，用来处理读取到的字节流*/
 	virtual AZinxHandler *GetInputNextStage(BytesMsg &_oInput) = 0;
 private:
-	virtual IZinxMsg *InternelHandle(IZinxMsg &_oInput);
+	virtual IZinxMsg *InternalHandle(IZinxMsg &_oInput);
 	virtual AZinxHandler *GetNextHandler(IZinxMsg &_oNextMsg);
 	std::list<std::string> m_WriteBuffer;
 	bool m_NeedClose = false;

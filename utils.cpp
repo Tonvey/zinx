@@ -8,7 +8,7 @@ void AZinxHandler::Handle(IZinxMsg & _oInput)
 	IZinxMsg *poNextMsg = NULL;
 	AZinxHandler *poNextHandler = NULL;
 
-	poNextMsg = InternelHandle(_oInput);
+	poNextMsg = InternalHandle(_oInput);
 	if (NULL != poNextMsg)
 	{
 		poNextHandler = GetNextHandler(*poNextMsg);
@@ -23,7 +23,7 @@ void AZinxHandler::Handle(IZinxMsg & _oInput)
 	return;
 }
 
-IZinxMsg *Ichannel::InternelHandle(IZinxMsg & _oInput)
+IZinxMsg *Ichannel::InternalHandle(IZinxMsg & _oInput)
 {
 	IZinxMsg *poRet = NULL;
 	GET_REF2DATA(SysIOReadyMsg, oIoStat, _oInput);
@@ -47,7 +47,7 @@ IZinxMsg *Ichannel::InternelHandle(IZinxMsg & _oInput)
 		{
 			ZinxKernel::Zinx_SetChannelOut(*this);
 		}
-		//加入发送缓冲区
+		//鍔犲叆鍙戦�佺紦鍐插尯
 		m_WriteBuffer.push_back(oBytes.szData);
 	}
 
@@ -101,7 +101,7 @@ AZinxHandler *Ichannel::GetNextHandler(IZinxMsg & _oNextMsg)
 	return poRet;
 }
 
-IZinxMsg *Iprotocol::InternelHandle(IZinxMsg & _oInput)
+IZinxMsg *Iprotocol::InternalHandle(IZinxMsg & _oInput)
 {
 	IZinxMsg *poRet = NULL;
 	GET_REF2DATA(SysIOReadyMsg, oIoStat, _oInput);
@@ -132,7 +132,7 @@ IZinxMsg *Iprotocol::InternelHandle(IZinxMsg & _oInput)
 	return poRet;
 }
 
-IZinxMsg *Irole::InternelHandle(IZinxMsg & _oInput)
+IZinxMsg *Irole::InternalHandle(IZinxMsg & _oInput)
 {
 	IZinxMsg *poRet = NULL;
 	GET_REF2DATA(SysIOReadyMsg, oIoStat, _oInput);

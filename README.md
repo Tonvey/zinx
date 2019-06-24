@@ -28,7 +28,7 @@ We appreciate every developer fork this repository and implement more and more s
 # Quick Start
 
 1. Call ZinxKernel::ZinxKernelInit() first to initialize IO-schedule kernel of this framework.
-2. Create a class inherit AZinxHandler and override InternelHandle. In this function you can add your own code in which is used to handle bytes stream read from some input channel. For example, you can just print bytes on STDOUT. When you override this function, you may use the macro GET_REF2DATA to convert IZinxMsg reference to BytesMsg reference.
+2. Create a class inherit AZinxHandler and override InternalHandle. In this function you can add your own code in which is used to handle bytes stream read from some input channel. For example, you can just print bytes on STDOUT. When you override this function, you may use the macro GET_REF2DATA to convert IZinxMsg reference to BytesMsg reference.
 3. Create a or more classes inherit Ichannel and override the required functions which defined the actions of one specific data channel(file description in general). When you override GetInputNextStage, you were actually pointing who is the next handler. So return a object create based on class you defined in step 2 is the most adviced.
 4. Create object based on the Ichannel class you create in step 2, and add it to kernel using ZinxKernel::Zinx_Add_Channel().
 5. Call ZinxKernel::Zinx_Run() and your process will enter a loop in which data will be processed obeying method you pre-defined in function InernelHandle when data came from file opened as fd of Ichannel object.
@@ -68,7 +68,7 @@ class Echo:public AZinxHandler
 {
 public:
     /*define echo action which is get string from input, and send out it via stdout channel object*/
-    virtual IZinxMsg *InternelHandle(IZinxMsg &_oInput){
+    virtual IZinxMsg *InternalHandle(IZinxMsg &_oInput){
         GET_REF2DATA(BytesMsg, oBytes, _oInput);
         ZinxKernel::Zinx_SendOut(oBytes.szData, *poOut);
         return NULL;
@@ -122,7 +122,7 @@ int main()
                                           |
                                           v
                                 +---------+----------+
-                                |Echo::InternelHandle|
+                                |Echo::InternalHandle|
                                 +---------+----------+
                                           |
                                           |
