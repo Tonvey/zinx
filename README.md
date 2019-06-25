@@ -46,7 +46,7 @@ using namespace std;
 class TestStdout:public Ichannel{
 public:
     /*do nothing*/
-    virtual bool Init(){}
+    virtual bool Init(){return true;}
     /*do nothing*/
     virtual bool ReadFd(std::string &_input){return false;}
     /*write to STDOUT directly*/
@@ -80,7 +80,7 @@ public:
 class TestStdin:public Ichannel{
 public:
     /*do nothing*/
-    virtual bool Init(){}
+    virtual bool Init(){return true;}
     virtual bool ReadFd(std::string &_input){
         cin>>_input;
         return true;
