@@ -19,7 +19,7 @@ We appreciate every developer fork this repository and implement more and more s
 
     `mkdir build`
 
-    `cd build
+    `cd build`
 
     `cmake ..`
 
