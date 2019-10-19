@@ -1,29 +1,6 @@
-#ifndef _ZINX_H_
-#define _ZINX_H_
+#pragma once
 #include <string>
 #include <list>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <iostream>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <malloc.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <stdarg.h>
-#include <fcntl.h>
-#include <list>
-#include <sys/wait.h>
 
 /*定义动态类型转换后的引用类型，若转换失败则执行返回NULL*/
 #define GET_REF2DATA(type, ref, orig)  type * pref = dynamic_cast<type *>(&orig); if (nullptr == pref) {return nullptr;} type &ref = dynamic_cast<type&>(orig)
@@ -241,6 +218,8 @@ private:
 	~ZinxKernel();
 	bool Add_Channel(Ichannel &_oChannel);
 	void Del_Channel(Ichannel &_oChannel);
+    void Set_ChannelOut(Ichannel &_oChannel);
+	void Clear_ChannelOut(Ichannel &_oChannel);
 	bool Add_Proto(Iprotocol &_oProto);
 	void Del_Proto(Iprotocol &_oProto);
 	bool Add_Role(Irole &_oRole);
@@ -250,7 +229,7 @@ private:
 	std::list<Ichannel *> m_ChannelList;
 	std::list<Iprotocol *> m_ProtoList;
 	std::list<Irole *> m_RoleList;
-	int iEpollFd = -1;
+	int m_kernel_handle = -1;
 	static ZinxKernel *poZinxKernel;
 	bool m_need_exit = false;
 public:
@@ -260,6 +239,3 @@ public:
 		poZinxKernel->m_need_exit = true;
 	}
 };
-
-#endif
-

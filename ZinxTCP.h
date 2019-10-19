@@ -1,7 +1,5 @@
-#ifndef _ZINXTCP_H_
-#define _ZINXTCP_H_
+#pragma once
 #include "zinx.h"
-
 /*tcp数据套接字通道类，继承通道类，该类也是一个抽象类，需要开发者继承该类，
 重写GetInputNextStage函数以指定读取到的字节流的处理方式*/
 class ZinxTcpData :public Ichannel {
@@ -9,7 +7,7 @@ private:
 	int m_DataFd = -1;
 public:
 	ZinxTcpData(int _fd) :m_DataFd(_fd){}
-	virtual ~ZinxTcpData() { close(m_DataFd); }
+	virtual ~ZinxTcpData();
 
 	virtual bool Init() override;
 	virtual bool ReadFd(std::string & _input) override;
@@ -18,7 +16,7 @@ public:
 	virtual int GetFd() override;
 	virtual std::string GetChannelInfo() override;
 
-	virtual AZinxHandler * GetInputNextStage(BytesMsg & _oInput) = 0;
+	virtual AZinxHandler * GetInputNextStage(BytesMsg & _oInput)override = 0;
 };
 
 /*产生tcp数据套接字通道类的抽象工厂类，
@@ -27,6 +25,7 @@ public:
 class IZinxTcpConnFact {
 public:
 	virtual ZinxTcpData *CreateTcpDataChannel(int _fd) = 0;
+    virtual ~IZinxTcpConnFact(){}
 };
 
 /*tcp监听通道类，这是一个实体类（不建议继承该类），开发者可以直接创建tcp监听通道对象，
@@ -50,4 +49,3 @@ public:
 	virtual std::string GetChannelInfo() override;
 	virtual AZinxHandler * GetInputNextStage(BytesMsg & _oInput);
 };
-#endif

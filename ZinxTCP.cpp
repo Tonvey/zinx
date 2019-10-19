@@ -1,4 +1,10 @@
 #include "ZinxTCP.h"
+#include <iostream>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 
 ZinxTCPListen::~ZinxTCPListen()
 {
@@ -102,6 +108,11 @@ AZinxHandler * ZinxTCPListen::GetInputNextStage(BytesMsg & _oInput)
 	return nullptr;
 }
 
+ZinxTcpData::~ZinxTcpData()
+{
+    close(m_DataFd);
+}
+
 bool ZinxTcpData::Init()
 {
 	return true;
@@ -161,5 +172,5 @@ int ZinxTcpData::GetFd()
 
 std::string ZinxTcpData::GetChannelInfo()
 {
-	return "TcpConnOn" + m_DataFd;
+	return std::string("TcpConnOn") + std::to_string(m_DataFd);
 }

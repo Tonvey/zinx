@@ -1,12 +1,12 @@
 #include "zinx.h"
+#include <sys/errno.h>
+#ifdef linux
 #include <sys/epoll.h>
 #include <unistd.h>
-
 ZinxKernel::ZinxKernel()
 {
-	iEpollFd = epoll_create(1);
+	m_kernel_handle = epoll_create(1);
 }
-
 ZinxKernel::~ZinxKernel()
 {
 	for (auto itr : m_ChannelList)
@@ -14,9 +14,9 @@ ZinxKernel::~ZinxKernel()
 		itr->Fini();
 		delete itr;
 	}
-	if (iEpollFd >= 0)
+	if (m_kernel_handle >= 0)
 	{
-		close(iEpollFd);
+		close(m_kernel_handle);
 	}
 }
 
@@ -30,7 +30,7 @@ bool ZinxKernel::Add_Channel(Ichannel & _oChannel)
 		stEvent.events = EPOLLIN|EPOLLOUT;
 		stEvent.data.ptr = &_oChannel;
 
-		if (0 == epoll_ctl(iEpollFd, EPOLL_CTL_ADD, _oChannel.GetFd(), &stEvent))
+		if (0 == epoll_ctl(m_kernel_handle, EPOLL_CTL_ADD, _oChannel.GetFd(), &stEvent))
 		{
 			m_ChannelList.push_back(&_oChannel);
 			bRet = true;
@@ -43,38 +43,8 @@ bool ZinxKernel::Add_Channel(Ichannel & _oChannel)
 void ZinxKernel::Del_Channel(Ichannel & _oChannel)
 {
 	m_ChannelList.remove(&_oChannel);
-	epoll_ctl(iEpollFd, EPOLL_CTL_DEL, _oChannel.GetFd(), NULL);
+	epoll_ctl(m_kernel_handle, EPOLL_CTL_DEL, _oChannel.GetFd(), NULL);
 	_oChannel.Fini();
-}
-
-bool ZinxKernel::Add_Proto(Iprotocol & _oProto)
-{
-	m_ProtoList.push_back(&_oProto);
-	return true;
-}
-
-void ZinxKernel::Del_Proto(Iprotocol & _oProto)
-{
-	m_ProtoList.remove(&_oProto);
-}
-
-bool ZinxKernel::Add_Role(Irole & _oRole)
-{
-	bool bRet = false;
-
-	if (true == _oRole.Init())
-	{
-		m_RoleList.push_back(&_oRole);
-		bRet = true;
-	}
-
-	return bRet;
-}
-
-void ZinxKernel::Del_Role(Irole & _oRole)
-{
-	m_RoleList.remove(&_oRole);
-	_oRole.Fini();
 }
 
 void ZinxKernel::Run()
@@ -84,7 +54,7 @@ void ZinxKernel::Run()
 	while (false == m_need_exit)
 	{
 		struct epoll_event atmpEvent[100];
-		iEpollRet = epoll_wait(iEpollFd, atmpEvent, 100, -1);
+		iEpollRet = epoll_wait(m_kernel_handle, atmpEvent, 100, -1);
 		if (-1 == iEpollRet)
 		{
 			if (EINTR == errno)
@@ -121,10 +91,165 @@ void ZinxKernel::Run()
 		}
 	}
 }
+void ZinxKernel::Set_ChannelOut(Ichannel &_oChannel)
+{
+	struct epoll_event stEvent;
+	stEvent.events = EPOLLIN | EPOLLOUT;
+	stEvent.data.ptr = &_oChannel;
+
+	epoll_ctl(m_kernel_handle, EPOLL_CTL_MOD, _oChannel.GetFd(), &stEvent);
+}
+void ZinxKernel::Clear_ChannelOut(Ichannel &_oChannel)
+{
+	struct epoll_event stEvent;
+	stEvent.events = EPOLLIN;
+	stEvent.data.ptr = &_oChannel;
+
+	epoll_ctl(m_kernel_handle, EPOLL_CTL_MOD, _oChannel.GetFd(), &stEvent);
+}
+
+#elif defined(__APPLE__)||defined(__FreeBSD__)
+#include <unistd.h>
+#include <sys/event.h>
+#include <sys/types.h>
+ZinxKernel::ZinxKernel()
+{
+	m_kernel_handle = kqueue();
+}
+ZinxKernel::~ZinxKernel()
+{
+	for (auto itr : m_ChannelList)
+	{
+		itr->Fini();
+		delete itr;
+	}
+	if (m_kernel_handle >= 0)
+	{
+		close(m_kernel_handle);
+	}
+}
+
+bool ZinxKernel::Add_Channel(Ichannel & _oChannel)
+{
+	bool bRet = false;
+
+	if (true == _oChannel.Init())
+	{
+		struct kevent stEvent;
+        EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_READ, EV_ADD , 0, 0, &_oChannel);
+        if(kevent(m_kernel_handle, &stEvent, 1, NULL, 0, NULL)>0)
+        {
+			m_ChannelList.push_back(&_oChannel);
+			bRet = true;
+		}
+	}
+
+	return bRet;
+}
+
+void ZinxKernel::Del_Channel(Ichannel & _oChannel)
+{
+	m_ChannelList.remove(&_oChannel);
+    struct kevent evt;
+    EV_SET(&evt, _oChannel.GetFd(),EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    kevent(m_kernel_handle, &evt, 1, NULL, 0, NULL);
+	_oChannel.Fini();
+}
+
+
+void ZinxKernel::Run()
+{
+	int iEpollRet = -1;
+
+	while (false == m_need_exit)
+	{
+		struct kevent atmpEvent[10];
+		iEpollRet =kevent(m_kernel_handle, NULL, 0, atmpEvent, 10, NULL);
+		if (-1 == iEpollRet)
+		{
+			if (EINTR == errno)
+			{
+				continue;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for (int i = 0; i < iEpollRet; i++)
+		{
+			Ichannel *poChannel = static_cast<Ichannel *>(atmpEvent[i].udata);
+			if (EVFILT_READ == atmpEvent[i].filter)
+			{
+				SysIOReadyMsg IoStat = SysIOReadyMsg(SysIOReadyMsg::IN);
+				poChannel->Handle(IoStat);
+				if (true == poChannel->ChannelNeedClose())
+				{
+					ZinxKernel::Del_Channel(*poChannel);
+					delete poChannel;
+					break;
+				}
+			}
+			if (EVFILT_WRITE == atmpEvent[i].filter)
+			{
+				poChannel->FlushOut();
+				if (false == poChannel->HasOutput())
+				{
+					Zinx_ClearChannelOut(*poChannel);
+				}
+			}
+		}
+	}
+}
+void ZinxKernel::Set_ChannelOut(Ichannel &_oChannel)
+{
+	struct kevent stEvent;
+    EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_WRITE, EV_ADD, 0, 0, &_oChannel);
+    kevent(m_kernel_handle,&stEvent, 1, NULL, 0, NULL);
+}
+void ZinxKernel::Clear_ChannelOut(Ichannel &_oChannel)
+{
+	struct kevent stEvent;
+    EV_SET(&stEvent, _oChannel.GetFd(), EVFILT_WRITE, EV_DELETE, 0, 0, &_oChannel);
+    kevent(m_kernel_handle, &stEvent, 1, NULL, 0, NULL);
+}
+#endif
+
+bool ZinxKernel::Add_Proto(Iprotocol & _oProto)
+{
+	m_ProtoList.push_back(&_oProto);
+	return true;
+}
+
+void ZinxKernel::Del_Proto(Iprotocol & _oProto)
+{
+	m_ProtoList.remove(&_oProto);
+}
+
+bool ZinxKernel::Add_Role(Irole & _oRole)
+{
+	bool bRet = false;
+
+	if (true == _oRole.Init())
+	{
+		m_RoleList.push_back(&_oRole);
+		bRet = true;
+	}
+
+	return bRet;
+}
+
+void ZinxKernel::Del_Role(Irole & _oRole)
+{
+	m_RoleList.remove(&_oRole);
+	_oRole.Fini();
+}
+
 void ZinxKernel::SendOut(UserData & _oUserData)
 {
 
 }
+
 ZinxKernel *ZinxKernel::poZinxKernel = NULL;
 bool ZinxKernel::ZinxKernelInit()
 {
@@ -132,7 +257,6 @@ bool ZinxKernel::ZinxKernelInit()
 	{
 		poZinxKernel = new ZinxKernel();
 	}
-	
 	return true;
 }
 
@@ -169,20 +293,12 @@ Ichannel *ZinxKernel::Zinx_GetChannel_ByInfo(std::string _szInfo)
 
 void ZinxKernel::Zinx_SetChannelOut(Ichannel & _oChannel)
 {
-	struct epoll_event stEvent;
-	stEvent.events = EPOLLIN | EPOLLOUT;
-	stEvent.data.ptr = &_oChannel;
-
-	epoll_ctl(poZinxKernel->iEpollFd, EPOLL_CTL_MOD, _oChannel.GetFd(), &stEvent);
+    poZinxKernel->Set_ChannelOut(_oChannel);
 }
 
 void ZinxKernel::Zinx_ClearChannelOut(Ichannel & _oChannel)
 {
-	struct epoll_event stEvent;
-	stEvent.events = EPOLLIN;
-	stEvent.data.ptr = &_oChannel;
-
-	epoll_ctl(poZinxKernel->iEpollFd, EPOLL_CTL_MOD, _oChannel.GetFd(), &stEvent);
+    poZinxKernel->Clear_ChannelOut(_oChannel);
 }
 
 bool ZinxKernel::Zinx_Add_Proto(Iprotocol & _oProto)
@@ -232,4 +348,3 @@ void ZinxKernel::Zinx_SendOut(std::string & szBytes, Ichannel & _oChannel)
 	oBytes.szData = szBytes;
 	_oChannel.Handle(oBytes);
 }
-
