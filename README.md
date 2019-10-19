@@ -13,9 +13,15 @@ We appreciate every developer fork this repository and implement more and more s
 
     `git clone https://github.com/Tonvey/zinx.git`
 
-2. enter project folder and run make
+2. enter project folder and run cmake
 
     `cd zinx`
+
+    `mkdir build`
+
+    `cd build
+
+    `cmake ..`
 
     `make`
 
