@@ -177,7 +177,7 @@ private:
 #ifdef __ZINX_KQUEUE__
 public:
     /*kqueue 定时器专用，返回值为0表示普通的channel , 否则表示定时器间隔（毫秒）*/
-    virtual int GetTimerIntaval() { return 0;};
+    virtual int GetTimerInterval() { return 0;};
     virtual void SetTimeOut(int times){m_Timeouts=times;};
 protected:
     //m_Timeouts存储从上次超时到现在为止之间的时间一共超时多少次

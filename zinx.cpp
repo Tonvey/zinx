@@ -136,9 +136,9 @@ bool ZinxKernel::Add_Channel(Ichannel & _oChannel)
 	if (true == _oChannel.Init())
 	{
 		struct kevent stEvent;
-        if(_oChannel.GetTimerIntaval()>0)
+        if(_oChannel.GetTimerInterval()>0)
         {
-            EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_TIMER, EV_ADD , 0,_oChannel.GetTimerIntaval(), &_oChannel);
+            EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_TIMER, EV_ADD , 0,_oChannel.GetTimerInterval(), &_oChannel);
         }
         else
         {
@@ -158,7 +158,7 @@ void ZinxKernel::Del_Channel(Ichannel & _oChannel)
 {
 	m_ChannelList.remove(&_oChannel);
     struct kevent evt;
-    if(_oChannel.GetTimerIntaval()>0)
+    if(_oChannel.GetTimerInterval()>0)
     {
         EV_SET(&evt, _oChannel.GetFd(),EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
     }
@@ -229,7 +229,7 @@ void ZinxKernel::Run()
 }
 void ZinxKernel::Set_ChannelOut(Ichannel &_oChannel)
 {
-    if(_oChannel.GetTimerIntaval()>0)
+    if(_oChannel.GetTimerInterval()>0)
         return;
 	struct kevent stEvent;
     EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_WRITE, EV_ADD, 0, 0, &_oChannel);

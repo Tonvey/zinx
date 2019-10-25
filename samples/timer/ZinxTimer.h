@@ -31,7 +31,7 @@ public:
 
 #ifdef __ZINX_KQUEUE__
     /*kqueue 定时器专用，返回值为0表示普通的channel , 否则表示定时器间隔（毫秒）*/
-    virtual int GetTimerIntaval() { return 1000;};
+    virtual int GetTimerInterval() { return 1000;};
 #endif
 
 protected:
