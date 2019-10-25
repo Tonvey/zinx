@@ -31,8 +31,8 @@ bool ZinxTimer::ReadFd(std::string & _input)
 bool ZinxTimer::Init()
 {
 	//初始化的时候创建timer
-    int ret = 0;
-	return ret == 0;
+    m_fd = 1;
+	return true;
 }
 bool ZinxTimer::ReadFd(std::string & _input)
 {
