@@ -47,5 +47,5 @@ public:
 	virtual void Fini() override;
 	virtual int GetFd() override;
 	virtual std::string GetChannelInfo() override;
-	virtual AZinxHandler * GetInputNextStage(BytesMsg & _oInput);
+	virtual AZinxHandler * GetInputNextStage(BytesMsg & _oInput) override;
 };
