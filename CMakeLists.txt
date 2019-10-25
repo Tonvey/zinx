@@ -4,11 +4,15 @@ set(CMAKE_CXX_STANDARD 11)
 file(GLOB srcs *.c*)
 file(GLOB headers *.h)
 
+include_directories(./)
+
 add_library(LibZinxShared SHARED ${srcs})
 add_library(LibZinxStatic STATIC ${srcs})
 
 set_target_properties(LibZinxShared PROPERTIES OUTPUT_NAME zinx)
 set_target_properties(LibZinxStatic PROPERTIES OUTPUT_NAME zinx)
+
+add_subdirectory(./samples)
 
 IF (NOT CMAKE_INSTALL_PREFIX)
     SET(CMAKE_INSTALL_PREFIX "/usr/local/"

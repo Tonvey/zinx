@@ -1,6 +1,11 @@
 #pragma once
 #include <string>
 #include <list>
+#if defined(__APPLE__)||defined(__FreeBSD__)
+#define __ZINX_KQUEUE__
+#elif defined(linux)
+#define __ZINX_EPOLL__
+#endif
 
 /*定义动态类型转换后的引用类型，若转换失败则执行返回NULL*/
 #define GET_REF2DATA(type, ref, orig)  type * pref = dynamic_cast<type *>(&orig); if (nullptr == pref) {return nullptr;} type &ref = dynamic_cast<type&>(orig)
@@ -72,7 +77,7 @@ class Irole :public AZinxHandler {
 public:
 	Irole() {}
 	virtual ~Irole() {}
-	
+
 	/*初始化函数，开发者可以重写该方法实现对象相关的初始化，该函数会在role对象添加到zinxkernel时调用*/
 	virtual bool Init() = 0;
 
@@ -109,7 +114,7 @@ public:
 	virtual ~Iprotocol() {}
 	/*原始数据和业务数据相互函数，开发者重写该函数，实现协议*/
 	virtual UserData *raw2request(std::string _szInput) = 0;
-	
+
 	/*原始数据和业务数据相互函数，开发者重写该函数，实现协议*/
 	virtual std::string *response2raw(UserData &_oUserData) = 0;
 protected:
@@ -158,6 +163,11 @@ public:
 	bool ChannelNeedClose() { return m_NeedClose; }
     /*获取通道信息函数，开发者可以在该函数中返回跟通道相关的一些特征字符串，方便后续查找和过滤*/
 	virtual std::string GetChannelInfo() = 0;
+#ifdef __ZINX_KQUEUE__
+    /*kqueue 定时器专用，返回值为0表示普通的channel , 否则表示定时器间隔（毫秒）*/
+    virtual int GetTimerIntaval() { return 0;};
+#endif
+
 protected:
 	/*获取下一个处理环节，开发者应该重写该函数，指定下一个处理环节
 	一般地，开发者应该在该函数返回一个协议对象，用来处理读取到的字节流*/

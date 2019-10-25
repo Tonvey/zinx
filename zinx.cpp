@@ -1,6 +1,6 @@
 #include "zinx.h"
 #include <sys/errno.h>
-#ifdef linux
+#ifdef __ZINX_EPOLL__
 #include <sys/epoll.h>
 #include <unistd.h>
 ZinxKernel::ZinxKernel()
@@ -108,7 +108,7 @@ void ZinxKernel::Clear_ChannelOut(Ichannel &_oChannel)
 	epoll_ctl(m_kernel_handle, EPOLL_CTL_MOD, _oChannel.GetFd(), &stEvent);
 }
 
-#elif defined(__APPLE__)||defined(__FreeBSD__)
+#elif defined(__ZINX_KQUEUE__)
 #include <unistd.h>
 #include <sys/event.h>
 #include <sys/types.h>
@@ -136,7 +136,14 @@ bool ZinxKernel::Add_Channel(Ichannel & _oChannel)
 	if (true == _oChannel.Init())
 	{
 		struct kevent stEvent;
-        EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_READ, EV_ADD , 0, 0, &_oChannel);
+        if(_oChannel.GetTimerIntaval()>0)
+        {
+            EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_TIMER, EV_ADD , 0,_oChannel.GetTimerIntaval(), &_oChannel);
+        }
+        else
+        {
+            EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_READ, EV_ADD , 0, 0, &_oChannel);
+        }
         if(kevent(m_kernel_handle, &stEvent, 1, NULL, 0, NULL)>0)
         {
 			m_ChannelList.push_back(&_oChannel);
@@ -151,7 +158,14 @@ void ZinxKernel::Del_Channel(Ichannel & _oChannel)
 {
 	m_ChannelList.remove(&_oChannel);
     struct kevent evt;
-    EV_SET(&evt, _oChannel.GetFd(),EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    if(_oChannel.GetTimerIntaval()>0)
+    {
+        EV_SET(&evt, _oChannel.GetFd(),EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+    }
+    else
+    {
+        EV_SET(&evt, _oChannel.GetFd(),EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    }
     kevent(m_kernel_handle, &evt, 1, NULL, 0, NULL);
 	_oChannel.Fini();
 }
@@ -179,7 +193,8 @@ void ZinxKernel::Run()
 		for (int i = 0; i < iEpollRet; i++)
 		{
 			Ichannel *poChannel = static_cast<Ichannel *>(atmpEvent[i].udata);
-			if (EVFILT_READ == atmpEvent[i].filter)
+			if (EVFILT_READ == atmpEvent[i].filter||
+                EVFILT_TIMER == atmpEvent[i].filter)
 			{
 				SysIOReadyMsg IoStat = SysIOReadyMsg(SysIOReadyMsg::IN);
 				poChannel->Handle(IoStat);
@@ -190,7 +205,7 @@ void ZinxKernel::Run()
 					break;
 				}
 			}
-			if (EVFILT_WRITE == atmpEvent[i].filter)
+			else if (EVFILT_WRITE == atmpEvent[i].filter)
 			{
 				poChannel->FlushOut();
 				if (false == poChannel->HasOutput())
@@ -203,6 +218,8 @@ void ZinxKernel::Run()
 }
 void ZinxKernel::Set_ChannelOut(Ichannel &_oChannel)
 {
+    if(_oChannel.GetTimerIntaval()>0)
+        return;
 	struct kevent stEvent;
     EV_SET(&stEvent, _oChannel.GetFd(),EVFILT_WRITE, EV_ADD, 0, 0, &_oChannel);
     kevent(m_kernel_handle,&stEvent, 1, NULL, 0, NULL);
