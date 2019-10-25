@@ -193,8 +193,7 @@ void ZinxKernel::Run()
 		for (int i = 0; i < iEpollRet; i++)
 		{
 			Ichannel *poChannel = static_cast<Ichannel *>(atmpEvent[i].udata);
-			if (EVFILT_READ == atmpEvent[i].filter||
-                EVFILT_TIMER == atmpEvent[i].filter)
+			if (EVFILT_READ == atmpEvent[i].filter)
 			{
 				SysIOReadyMsg IoStat = SysIOReadyMsg(SysIOReadyMsg::IN);
 				poChannel->Handle(IoStat);
@@ -205,6 +204,18 @@ void ZinxKernel::Run()
 					break;
 				}
 			}
+            if(EVFILT_TIMER == atmpEvent[i].filter)
+            {
+                poChannel->SetTimeOut( atmpEvent[i].data);
+				SysIOReadyMsg IoStat = SysIOReadyMsg(SysIOReadyMsg::IN);
+				poChannel->Handle(IoStat);
+				if (true == poChannel->ChannelNeedClose())
+				{
+					ZinxKernel::Del_Channel(*poChannel);
+					delete poChannel;
+					break;
+				}
+            }
 			else if (EVFILT_WRITE == atmpEvent[i].filter)
 			{
 				poChannel->FlushOut();

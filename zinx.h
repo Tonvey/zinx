@@ -163,10 +163,6 @@ public:
 	bool ChannelNeedClose() { return m_NeedClose; }
     /*获取通道信息函数，开发者可以在该函数中返回跟通道相关的一些特征字符串，方便后续查找和过滤*/
 	virtual std::string GetChannelInfo() = 0;
-#ifdef __ZINX_KQUEUE__
-    /*kqueue 定时器专用，返回值为0表示普通的channel , 否则表示定时器间隔（毫秒）*/
-    virtual int GetTimerIntaval() { return 0;};
-#endif
 
 protected:
 	/*获取下一个处理环节，开发者应该重写该函数，指定下一个处理环节
@@ -177,6 +173,16 @@ private:
 	virtual AZinxHandler *GetNextHandler(IZinxMsg &_oNextMsg);
 	std::list<std::string> m_WriteBuffer;
 	bool m_NeedClose = false;
+
+#ifdef __ZINX_KQUEUE__
+public:
+    /*kqueue 定时器专用，返回值为0表示普通的channel , 否则表示定时器间隔（毫秒）*/
+    virtual int GetTimerIntaval() { return 0;};
+    virtual void SetTimeOut(int times){m_Timeouts=times;};
+protected:
+    //m_Timeouts存储从上次超时到现在为止之间的时间一共超时多少次
+    int m_Timeouts;
+#endif
 };
 
 /*zinx并发核心，整个框架既是一个单例，提供若干静态方法进行操作。*/

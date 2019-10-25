@@ -38,7 +38,11 @@ bool ZinxTimer::ReadFd(std::string & _input)
 {
     static int t = 10;
     --t;
-    cout<<"Hadsfjadjsflksjdf"<<endl;
+    sleep(5);
+    for(int i = 0 ; i<m_Timeouts;++i)
+    {
+        cout<<"HelloWorld"<<endl;
+    }
     if(t<=0)
     {
         ZinxKernel::Zinx_Del_Channel(*this);
